@@ -2,6 +2,13 @@
 
 The location of the zip files should be `/addon.id/addon.id-x.y.z.zip`
 
+```bash
+sudo apt install libxml2-utils zip
+./addons.sh
+docker-compose up -d
+echo http://$(curl -s ipinfo.io/ip):888/addons.xml
+```
+
 ## kodi.filmkodi.com
 
 https://github.com/mrknow/filmkodi
