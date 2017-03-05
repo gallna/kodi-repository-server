@@ -1,66 +1,50 @@
 #!/bin/bash
-
-function current-version() {
-    cat | xmllint --xpath 'string(//addon/@version)' -
-}
-
-function next-version() {
-    local ver=$(cat | current-version)
-    local minor=${ver##*.}
-    echo ${ver%.*}.$((minor + 1))
-}
-
-# addon_version
-function patch-addon() {
-    cat | perl -p -e "$(printf 's|(\<addon.*)(id=".*?")([^\>]*>)|$1 id="%s" $3|' $1)" |\
-        perl -p -e "$(printf 's|(\<addon.*)(version=".*?")([^\>]*>)|$1 version="%s" $3|' $2)" |\
-        perl -p -e "$(printf 's|(\<addon.*)(provider-name=".*?")([^\>]*>)|$1 provider-name="%s" $3|' 'gallna')"
-}
-
-# addon_name addon_version
-function add-zip() {
-    zip_name=$1-$2.zip
-    zip -q -r $zip_name $1
-    md5sum $zip_name > $zip_name.md5
-}
-
 pushd `dirname $0` #self-dir
 
+fanfilm_repo=http://kodi.filmkodi.com/addons.xml
+fanfilm_name=plugin.video.fanfilm
+youtube_repo=http://mirror.ox.ac.uk/sites/xbmc.org/addons/leia/addons.xml
+youtube_name=script.module.youtube.dl
+repo_name=repository.gallna
+repo_ver=1.0.4
+
 mkdir -p build
-addons_tmp=$(mktemp)
 pushd build #build-dir
 
-for addon_xml in */addon.xml; do
-  name=$(basename `dirname $addon_xml`)
-  ver=$(cat $addon_xml | current-version)
-  # ver=$(cat $addon_xml.patch | next-version)
-
-  if [[ -f $addon_xml.patch ]]; then
-    test -f $addon_xml.orig || cp -u $addon_xml $addon_xml.orig
-    ver=$(cat $addon_xml.patch | current-version)
-    xmllint --format $addon_xml.patch | patch-addon $name $ver > $addon_xml
-  fi
-
-  printf "\n\n\n%30s$name:$ver%30s\n\n\n" | tr "  " "."
-
-  add-zip $name $ver
-  xmllint --c14n11 $addon_xml >> $addons_tmp
-
-  mkdir -p ../html/$name
-  mv $name*.zip ../html/$name/
-  mv $name*.zip.md5 ../html/$name/
-done
-
+### repository.gallna
+if [[ -f $repo_name/addon.xml ]]; then
+  mkdir -p $repo_name
+  external_url=http://$(curl -s ipinfo.io/ip):888;
 (
 cat <<EOT
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addons>
-  `cat $addons_tmp`
-</addons>
+<addon id="$repo_name" name="gallna repository" version="$repo_ver" provider-name="gallna">
+  <extension point="xbmc.addon.repository" name="gallna Add-on Repository">
+    <info compressed="false">$external_url/addons.xml</info>
+    <checksum>$external_url/addons.xml.md5</checksum>
+    <datadir zip="true">$external_url</datadir>
+  </extension>
+</addon>
 EOT
-) | tee >(md5sum - > ../html/addons.xml.md5) > ../html/addons.xml
+) > $repo_name/addon.xml
+cp ../html/icon.png $repo_name/
+fi
+
+### script.module.youtube.dl
+if [[ ! -d $youtube_name ]]; then
+  git init $youtube_name
+  pushd $youtube_name #youtube-dir
+  git remote add -f -m master -t master origin git@github.com:ruuk/script.module.youtube.dl.git
+  git remote add -f -m master -t master youtube_dl git@github.com:rg3/youtube-dl.git
+  git pull && git rm -r lib/youtube_dl 1>/dev/null
+  git read-tree --prefix=lib/youtube_dl/ -u youtube_dl/master:youtube_dl
+  popd #youtube-dir
+fi
+
+### plugin.video.fanfilm
+if [[ ! -d $fanfilm_name ]]; then
+  git clone git@github.com:gallna/plugin.video.fanfilm.git $fanfilm_name
+fi
 
 popd #build-dir
 popd #self-dir
-
-exit 0
