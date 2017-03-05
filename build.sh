@@ -27,7 +27,6 @@ cat <<EOT
 </addon>
 EOT
 ) > $repo_name/addon.xml
-cp ../html/icon.png $repo_name/
 fi
 
 ### script.module.youtube.dl
@@ -38,6 +37,7 @@ if [[ ! -d $youtube_name ]]; then
   git remote add -f -m master -t master youtube_dl git@github.com:rg3/youtube-dl.git
   git pull && git rm -r lib/youtube_dl 1>/dev/null
   git read-tree --prefix=lib/youtube_dl/ -u youtube_dl/master:youtube_dl
+  curl -L http://pastebin.com/raw/HupBJ1iz > lib/youtube_dl/extractor/openload.py
   popd #youtube-dir
 fi
 
