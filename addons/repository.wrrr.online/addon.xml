@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon  id="repository.wrrr.online"  name="Kodi add-ons" version="1.0.7"   provider-name="wrrr" >
+  <extension point="xbmc.addon.repository" name="Kodi Repository">
+    <info compressed="false">http://kodi.wrrr.online:888/addons.xml</info>
+    <checksum>http://kodi.wrrr.online:888/addons.xml.md5</checksum>
+    <datadir zip="true">http://kodi.wrrr.online:888</datadir>
+  </extension>
+	<extension point="xbmc.addon.metadata">
+		<summary lang="en">Kodi addons</summary>
+    <description>Download and install Kodi addons</description>
+	</extension>
+</addon>
