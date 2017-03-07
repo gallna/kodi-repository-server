@@ -1,0 +1,139 @@
+NS ?= gallna
+NAME ?= $(shell pwd | awk -F / '{printf "%s.%s", $$(NF-1), $$NF}')
+STACK ?= $(shell pwd | awk -F / '{print $$NF}')
+VERSION ?= latest # $(GIT_TAG)
+
+SHELL = /bin/bash
+objects = docker-compose.yml Dockerfile rancher-compose.yml
+
+ifneq (,$(findstring Dockerfile, $(MAKECMDGOALS)))
+sources += docker.make
+endif
+ifneq (,$(findstring docker-compose.yml, $(MAKECMDGOALS)))
+sources += compose.make
+endif
+ifneq (,$(findstring rancher-compose.yml, $(MAKECMDGOALS)))
+sources += rancher.make
+endif
+
+# Selecting target - depending on files existing in current directory
+ifeq ($(strip $(sources)),)
+sources += $(shell test -f $$PWD/Dockerfile && echo docker)
+sources += $(shell test -f $$PWD/docker-compose.yml && echo compose)
+sources += $(shell test -f $$PWD/rancher-compose.yml && echo compose)
+endif
+
+addon_id := $(shell xmllint --xpath 'string(//addon/@id)' addon.xml)
+addon_version := $(shell xmllint --xpath 'string(//addon/@version)' addon.xml)
+addon_filename := $(join $(addon_id),-$(addon_version))
+addon_dirname := $(addon_id)
+
+version_minor := $(shell echo $(addon_version) | perl -pe 's~.*(?:\.(\d+))$$~\1~g')
+version_next := echo $(addon_version:.$(minor_version)=.$$(($(minor_version) + 1)))
+
+patch_id = xmllint --format addon.xml ^| perl -pe 's~(\<addon[^\>]*?id=)".*?"([^\>]*\>)~$$1"$(1)"$$2~'
+patch_version = xmllint --format addon.xml ^| perl -pe 's~(\<addon[^\>]*?version=)".*?"([^\>]*\>)~$$1"$(1)"$$2~'
+patch_provider = xmllint --format addon.xml | perl -pe 's~(\<addon[^\>]*?provider.name=)".*?"([^\>]*\>)~$$1"$(1)"$$2~'
+
+.DEFAULT_GOAL := build
+
+addon.xml:
+
+
+# Compile the entire program. This should be the default targe
+# all: build - starts by default
+push:
+
+# Build the project and create docker container
+build:
+	$(call patch_version,2)
+	# $(call version_next)
+	# echo $(addon_filename)
+	# echo zip -q -r $(addon_filename).zip $(addon_dirname)
+	# echo md5sum $(addon_filename).zip  $(addon_filename).zip.md5
+
+# Build and run current project
+run:
+
+# Stop current project
+stop:
+
+# Delete all files that war created by running make.
+clean: stop
+
+# Perform self tests on the program this makefile builds.
+test:
+
+logs:
+
+  #####################################
+ ############### TEST ###############
+#####################################
+# Add tests
+tests := unit integration acceptance
+test ?= $(addprefix test., $(tests))
+.PHONY : unit-test integration-test acceptance-test
+# Testing technique using which individual modules are tested to determine if there
+# are any issues by the developer himself. (testing code - functions/methods)
+test.unit: ;
+
+# The purpose of integration testing is to verify the functional, performance, and
+# reliability between the modules that are integrated.
+# When you put two or more pieces of (sub)modules or (sub)systems together and see if they play nicely together.
+test.integration: ;
+
+# Acceptance testing, a testing technique performed to determine whether or not
+# the software system has met the requirement specifications.
+test.acceptance: ;
+
+  #####################################
+ ########### dependencies ############
+#####################################
+pip.install:
+	if ! which pip; then sudo apt-get install -y python-pip; fi
+
+dockerfile.install:
+	if ! which docker; then wget -qO- https://get.docker.com/ | sh; sudo usermod -aG docker $(whoami); fi
+
+docker-compose.install: docker.install pip.install
+	if ! pip list | grep -F docker-compose; then sudo pip install docker-compose; fi
+
+rancher-compose.install:
+	curl -sL https://github.com/rancher/rancher-compose/releases/download/v0.12.0/rancher-compose-linux-amd64-v0.12.0.tar.gz | tar -xz --strip=2 -C /tmp
+	sudo install -g users -m 775 /tmp/rancher-compose /usr/local/bin
+
+
+	  #####################################
+	 ################ GIT ################
+	#####################################
+	GIT_TAG=$(shell git describe --tags --always)
+	# REF_TAG=$(shell git for-each-ref --format="%(refname:short)" --sort=-authordate --count=1 refs/tags)
+	# LAST_TAG=$(shell git describe --abbrev=0 --tags)
+	# TAG_BITS=$(shell ${LAST_TAG//./ })
+	# NEXT_TAG=$(shell echo "$TAG_BITS[0].$TAG_BITS[1].$((TAG_BITS[3]+1))")
+	#
+	# ### git tag ###
+	# git-tag:
+	# 	@echo $(GIT_TAG)
+	# git-ref-tag:
+	# 	@echo $(REF_TAG)
+	# git-last-tag:
+	# 	@echo $(LAST_TAG)
+	# git-next-tag:
+	# 	@echo $(NEXT_TAG)
+	#
+	# build-git:
+	# 	@[ -z "$(GIT_TAG)" ]; VERSION=$(GIT_TAG) $(MAKE) docker-build;
+	#
+	# push-git:
+	# 	@[ -z "$(GIT_TAG)" ]; VERSION=$(GIT_TAG) $(MAKE) docker-push;
+
+
+
+ifeq ($(UNAME),Darwin)
+	SHELL := /opt/local/bin/bash
+	OS_X  := true
+else
+	OS_DEB  := true
+	SHELL := /bin/bash
+endif

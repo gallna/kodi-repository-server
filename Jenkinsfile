@@ -19,6 +19,76 @@ response.appendNode(
 response.@numberOfResults = "2"
 println groovy.xml.XmlUtil.serialize(response)
 
+script.module.addon.signals
+Provides signal/slot mechanism for inter-addon communication in Kodi
+
+
+
+
+
+node {
+// git git@github.com:ruuk/script.module.youtube.dl.git
+checkout([$class: 'GitSCM',
+  branches: [[name: '*/youtube-dl']],
+  userRemoteConfigs: [
+    [url: 'git@github.com:gallna/script.module.youtube.dl.git']
+  ]
+  extensions: [
+    [$class: 'RelativeTargetDirectory', relativeTargetDir: 'script.module.youtube.dl']
+  ]
+])
+
+checkout([$class: 'GitSCM',
+  branches: [[name: '*/master']],
+  userRemoteConfigs: [
+    [url: 'git@github.com:rg3/youtube-dl.git']
+  ]
+  extensions: [
+    [$class: 'RelativeTargetDirectory', relativeTargetDir: 'script.module.youtube.dl/lib/youtube-dl '],
+    [$class: 'CheckoutOption'],
+    [$class: 'CloneOption', depth: 0, noTags: false, reference: 'youtube-dl ', shallow: false]
+  ],
+  submoduleCfg: [],
+  doGenerateSubmoduleConfigurations: false,
+])
+
+checkout([$class: 'GitSCM',
+  branches: [[name: '*/fanfilm/youtube-dl']],
+  userRemoteConfigs: [
+    [url: 'git@github.com:gallna/filmkodi.git']
+  ]
+  extensions: [
+    [$class: 'RelativeTargetDirectory', relativeTargetDir: 'plugin.video.fanfilm']
+  ],
+  submoduleCfg: [],
+  doGenerateSubmoduleConfigurations: false,
+])
+
+checkout([$class: 'GitSCM',
+  userRemoteConfigs: [
+    [url: 'git@github.com:ruuk/script.module.addon.signals.git']
+  ]
+  extensions: [
+    [$class: 'RelativeTargetDirectory', relativeTargetDir: 'fanfilm/youtube-dl ']
+  ],
+  submoduleCfg: [],
+  doGenerateSubmoduleConfigurations: false,
+])
+
+    dir("live/${env.PROJECT}") {
+
+      // deploy to development
+      withEnv(["VERSION=${env.VERSION}", "NAME=${env.PROJECT}"]) {
+          // deploy to development
+          stage 'Deploy'
+          sh "make upgrade"
+
+          // do integration tests using development environment
+          stage 'Integration tests'
+          sh "make integration-tests"
+      }
+  }
+
 def xml = new groovy.xml.StreamingMarkupBuilder().bind {
     records {
         car(name:'HSV Maloo', make:'Holden', year:2006) {

@@ -12,14 +12,14 @@ function next-version() {
     echo ${ver%.*}.$((minor + 1))
 }
 
-# addon_version
+# id version provider-name
 function patch-addon() {
     cat | perl -p -e "$(printf 's|(\<addon.*)(id=".*?")([^\>]*>)|$1 id="%s" $3|' $1)" |\
         perl -p -e "$(printf 's|(\<addon.*)(version=".*?")([^\>]*>)|$1 version="%s" $3|' $2)" |\
-        perl -p -e "$(printf 's|(\<addon.*)(provider-name=".*?")([^\>]*>)|$1 provider-name="%s" $3|' 'gallna')"
+        perl -p -e "$(printf 's|(\<addon.*)(provider-name=".*?")([^\>]*>)|$1 provider-name="%s" $3|' $3)"
 }
 
-# addon_name addon_version
+# $id $version
 function add-zip() {
     zip_name=$1-$2.zip
     zip -q -r $zip_name $1
