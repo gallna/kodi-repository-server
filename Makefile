@@ -43,7 +43,7 @@ addons.xml.md5: addons.xml
 addons.xml:
 	$(file >html/addons.xml,$(addons_xml))
 
-archives = $(shell for dir in html/*/.; do printf "%s\n\n" $$dir/*.zip | sort | tail -1; done)
+archives = $(shell for dir in html/*/.; do printf "%s\n\n" $$dir/*.zip | sort -V | tail -1; done)
 
 define addons_xml =
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

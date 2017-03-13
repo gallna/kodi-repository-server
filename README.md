@@ -12,13 +12,27 @@ echo http://$(curl -s ipinfo.io/ip):888/addons.xml
 ## Update procedure
 ```bash
 # update procedure
-cd addons/script.module.youtube.dl && make -f ../script.module.youtube.dl.make
-cd addons/repository.wrrr.online.make && make -f ../repository.wrrr.online.make
+cd addons/script.module.youtube.dl && make -f ../${PWD##*/}.make && cd -
+cd addons/plugin.video.fanfilm.dl && make -f ../${PWD##*/}.make && cd -
+cd addons/repository.wrrr.online && make -f ../${PWD##*/}.make && cd -
 
-make script.module.youtube.dl repository.wrrr.online addons.xml.md5
+make script.module.youtube.dl
+make plugin.video.fanfilm.dl
+make repository.wrrr.online
+
+# OR
+
+R=plugin.video.fanfilm.dl; cd addons/${R} && make -f ../${R}.make && cd - && make ${R}
+R=repository.wrrr.online; cd addons/${R} && make -f ../${R}.make && cd - && make ${R}
+R=repository.wrrr.online; cd addons/${R} && make -f ../${R}.make && cd - && make ${R}
+
+make addons.xml.md5
 
 # push to server
 mount ~/mnt/wrrr && make push && umount ~/mnt/wrrr
+
+
+
 ```
 
 ## kodi.filmkodi.com
