@@ -58,3 +58,84 @@ define addons_xml =
 	$(shell for dir in */addon.xml; do cat $$dir | xmllint --c14n11 -; done)
 </addons>
 endef
+
+
+SHELL = /bin/bash
+
+# VERSION := $(shell curl -sL https://raw.githubusercontent.com/rg3/youtube-dl/master/youtube_dl/version.py | grep version | awk '{ gsub(/'"'"'/, ""); print $$3 }')
+
+.PHONY: all build git patch version clean
+
+# Compile the entire program. This should be the default targe
+all: build patch version
+
+# Build the project and create docker container
+build:
+	git init
+	git remote add -f -m master -t master origin git@github.com:ruuk/script.module.youtube.dl.git
+	git remote add -f -m master -t master youtube_dl git@github.com:rg3/youtube-dl.git
+	git pull && git rm -r lib/youtube_dl 1>/dev/null
+	git read-tree --prefix=lib/youtube_dl/ -u youtube_dl/master:youtube_dl
+
+# Patch project
+patch:
+	# curl -L http://pastebin.com/raw/HupBJ1iz > lib/youtube_dl/extractor/openload.py
+
+# Patch project version
+version:
+	$(file >addon.xml,$(shell xmllint --format addon.xml |\
+		perl -pe 's~(\<addon[^\>]*?version=)".*?"([^\>]*\>)~$$1"$(VERSION)"$$2~'))
+
+# Delete all files that war created by running make.
+clean:
+	echo rm -rf $(CURDIR)
+
+ver_url=https://raw.githubusercontent.com/rg3/youtube-dl/master/youtube_dl/version.py
+VERSION = $(shell curl -sL $(ver_url) | grep version | awk '{ gsub(/'"'"'/, ""); print $$3 }')
+
+next_version=$(VERSION | awk 'BEGIN{FS=OFS="."}{$$NF=($$NF + 1); print}')
+
+define addon_version =
+xmllint --format addon.xml | perl -pe 's~(\<addon[^\>]*?version=)".*?"([^\>]*\>)~$$1"$(1)"$$2~'
+endef
+# perl -pei 's~(\<addon[^\>]*?version=)".*?"([^\>]*\>)~$$1"$(next_version)"$$2~' addon.xml
+
+next_addon_version:
+	$(call addon_version,$(VERSION))
+
+
+
+
+
+.ONESHELL:
+SHELL = /usr/bin/perl
+.SHELLFLAGS = -e
+show :
+	# Make sure "@" is not the first character on the first line
+	@f = qw(a b c);
+	print "@f\n";
+
+.ONESHELL:
+SHELL = /bin/bash
+foo ::
+	echo $(@D) && echo $PWD
+	cd ..
+	echo $(CURDIR)
+
+define my_important_task =
+# script goes here
+endef
+
+my-important-task: ; $(value my_important_task)
+
+
+
+define next_addon_version =
+VERSION=$(xmllint --xpath 'string(//addon/@version)' $(NAME)/addon.xml)
+addon_version=$(xmllint --format addon.xml | perl -pe 's~(\<addon[^\>]*?version=)".*?"([^\>]*\>)~$$1"$(VERSION)"$$2~')
+next_version=$(echo $(addon_version) | awk 'BEGIN{FS=OFS="."}{$$NF=($$NF + 1); print}')
+perl -pei 's~(\<addon[^\>]*?version=)".*?"([^\>]*\>)~$$1"$(next_version)"$$2~' addon.xml
+endef
+
+my-important-task: ; $(value my_important_task)
+	

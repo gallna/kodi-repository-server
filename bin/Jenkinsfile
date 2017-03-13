@@ -1,0 +1,42 @@
+#!groovy
+
+node {
+  checkout([$class: 'GitSCM',
+    branches: [[name: '*/fanfilm/youtube-dl']],
+    userRemoteConfigs: [
+      [url: 'git@github.com:gallna/filmkodi.git']
+    ]
+    extensions: [
+      [$class: 'RelativeTargetDirectory', relativeTargetDir: 'plugin.video.fanfilm']
+    ],
+    submoduleCfg: [],
+    doGenerateSubmoduleConfigurations: false,
+  ])
+
+  def version = sh(returnStdout: true, script: "git tag --sort version:refname | tail -1").trim()
+  def id = updateAddonXml(version)
+
+  updateRepoXml(id, version)
+  def zipFile = id + '-' + version + '.zip'
+  zip dir: id, zipFile: zipFile
+  archiveArtifacts artifacts: zipFile
+}
+
+def updateRepoXml(String id, String version) {
+  def response = new XmlSlurper().parseText(xml1)
+  def addon = response.addon.find {
+      it['@id'].toString().contains(id)
+  }
+  println 'Current ' + id + ' version: ' +  addon['@version'].toString()
+  addon['@version'] = version
+  println groovy.xml.XmlUtil.serialize(response)
+}
+
+def updateAddonXml(String version) {
+  def response = new XmlSlurper().parseText(xml2)
+  println 'Current version: ' + response['@version'].toString()
+  println 'Addon id: ' + response['@id'].toString()
+  response['@version'] = version
+  println groovy.xml.XmlUtil.serialize(response)
+  return response['@id'].toString()
+}
