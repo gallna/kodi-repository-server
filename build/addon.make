@@ -30,3 +30,14 @@ build:
 # Compile the entire program. This should be the default targe
 addon.xml:
 	$(call patch_version,$(VERSION))
+
+# Build and run current project
+addons.xml:
+	echo '$(strip ${addons})'
+
+define addons =
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addons>
+	$(shell for dir in ../build/*/addon.xml; do cat $$dir | xmllint --c14n11 -; done)
+</addons>
+endef
