@@ -1,11 +1,9 @@
 SHELL = /bin/bash
 
-objects := $(shell dirname */Makefile)
+objects := script.module.youtube.dl script.module.addon.signals repository.wrrr.online plugin.video.fanfilm.dl
 
-.PHONY: all $(objects)
-
-# Compile the entire program. This should be the default targe
-all: $(objects)
+.PHONY: $(objects)
 
 $(objects):
-	$(MAKE) -C $@ build
+	test -d "$@" || mkdir $@
+	cd $@ && $(MAKE) -f ../$@.make
